@@ -26,6 +26,11 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     ui->outputListTable->setColumnWidth(3, 55);
     ui->outputListTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Fixed);
     ui->outputListTable->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft);
+
+    if (ui->outputListTable->rowCount() == 0) {
+        ui->editEntryButton->setDisabled(true);
+        ui->removeEntryButton->setDisabled(true);
+    }
 }
 
 SettingsDialog::~SettingsDialog()
@@ -292,6 +297,11 @@ void SettingsDialog::on_checkOutputADSMessageToTCP_stateChanged(int arg1)
 void SettingsDialog::on_newEntryButton_clicked()
 {
     qDebug() << "New Button Clicked";
+
+    if (ui->outputListTable->rowCount() > 0) {
+        ui->editEntryButton->setDisabled(false);
+        ui->removeEntryButton->setDisabled(false);
+    }
 }
 
 void SettingsDialog::on_editEntryButton_clicked()
@@ -301,7 +311,24 @@ void SettingsDialog::on_editEntryButton_clicked()
 
 void SettingsDialog::on_removeEntryButton_clicked()
 {
-    qDebug() << "Remove Button Clicked";
+    QModelIndexList selection = ui->outputListTable->selectionModel()->selectedRows();
+
+    if (selection.count() == 0) {
+        QMessageBox msgBox(this);
+        msgBox.setText("Oof");
+        msgBox.exec();
+
+        return;
+    }
+
+    // NOTE: it is unlikely that more than one row will be selected
+
+    ui->outputListTable->removeRow(selection.at(0).row());
+
+    if (ui->outputListTable->rowCount() == 0) {
+        ui->editEntryButton->setDisabled(true);
+        ui->removeEntryButton->setDisabled(true);
+    }
 }
 
 void SettingsDialog::on_setUiOutButton_clicked()
