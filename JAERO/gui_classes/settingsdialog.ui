@@ -518,16 +518,6 @@
        <attribute name="verticalHeaderVisible">
         <bool>false</bool>
        </attribute>
-       <row>
-        <property name="text">
-         <string>0</string>
-        </property>
-       </row>
-       <row>
-        <property name="text">
-         <string>1</string>
-        </property>
-       </row>
        <column>
         <property name="text">
          <string>Format</string>
@@ -543,36 +533,6 @@
          <string>Port</string>
         </property>
        </column>
-       <item row="0" column="0">
-        <property name="text">
-         <string>JSON</string>
-        </property>
-       </item>
-       <item row="0" column="1">
-        <property name="text">
-         <string>fake</string>
-        </property>
-       </item>
-       <item row="0" column="2">
-        <property name="text">
-         <string>1111</string>
-        </property>
-       </item>
-       <item row="1" column="0">
-        <property name="text">
-         <string>3</string>
-        </property>
-       </item>
-       <item row="1" column="1">
-        <property name="text">
-         <string>fake</string>
-        </property>
-       </item>
-       <item row="1" column="2">
-        <property name="text">
-         <string>2222</string>
-        </property>
-       </item>
       </widget>
       <widget class="QPushButton" name="newEntryButton">
        <property name="geometry">

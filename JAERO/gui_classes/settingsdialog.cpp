@@ -1,3 +1,4 @@
+#include "createeditinputdialog.h"
 #include "settingsdialog.h"
 #include "ui_settingsdialog.h"
 #include <QDebug>
@@ -34,8 +35,7 @@ SettingsDialog::~SettingsDialog()
 
 void SettingsDialog::populatepublicvars()
 {
-
-    // TODO: msgdisplayformat=ui->comboBoxDisplayformat->currentText();
+    msgdisplayformat=ui->comboBoxoutputfmt->currentText();
     dropnontextmsgs=ui->checkBoxdropnontextmsgs->isChecked();
     donotdisplaysus.clear();
     QRegExp rx("([\\da-fA-F]+)");
@@ -290,12 +290,7 @@ void SettingsDialog::on_checkOutputADSMessageToTCP_stateChanged(int arg1)
 
 void SettingsDialog::on_newEntryButton_clicked()
 {
-    qDebug() << "New Button Clicked";
-
-    if (ui->outputListTable->rowCount() > 0) {
-        ui->editEntryButton->setDisabled(false);
-        ui->removeEntryButton->setDisabled(false);
-    }
+    CreateEditInputDialog::addEntry(this, ui->outputListTable);
 }
 
 void SettingsDialog::on_editEntryButton_clicked()
@@ -304,7 +299,7 @@ void SettingsDialog::on_editEntryButton_clicked()
 
     // NOTE: we explicitly disabled multiselection and made sure edit/remove buttons are disabled if no selection is active
 
-    qDebug() << "Editing row " << selection.at(0).row();
+    CreateEditInputDialog::editEntry(this, ui->outputListTable, selection.at(0).row());
 }
 
 void SettingsDialog::on_removeEntryButton_clicked()
