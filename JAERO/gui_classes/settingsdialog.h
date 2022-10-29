@@ -46,9 +46,9 @@ public:
     bool set_station_id_enabled;
     QString station_id;
 
-    QList<QHostAddress> udp_for_decoded_messages_address;
-    QList<quint16> udp_for_decoded_messages_port;
-    bool udp_for_decoded_messages_enabled;
+    // TODO: QList<QHostAddress> udp_for_decoded_messages_address;
+    // TODO: QList<quint16> udp_for_decoded_messages_port;
+    // TODO: bool udp_for_decoded_messages_enabled;
 
 
     QHostAddress tcp_for_ads_messages_address;
@@ -85,6 +85,10 @@ private slots:
     void on_lineEditlogdir_editingFinished();
     void on_lineEditplanesfolder_editingFinished();
     void on_checkOutputADSMessageToTCP_stateChanged(int arg1);
+    void on_newEntryButton_clicked();
+    void on_editEntryButton_clicked();
+    void on_removeEntryButton_clicked();
+    void on_setUiOutButton_clicked();
 };
 
 #endif // SETTINGSDIALOG_H

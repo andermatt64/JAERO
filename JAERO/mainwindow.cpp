@@ -1190,6 +1190,8 @@ void MainWindow::acceptsettings()
     planelog->planesfolder=settingsdialog->planesfolder;
     planelog->planelookup=settingsdialog->planelookup;
 
+    /*
+     * TODO:
     //this is for bottom textbox udp output
     //disconnect ports
     for(int ii=0;ii<udpsockets_bottom_textedit.size();ii++)
@@ -1207,6 +1209,7 @@ void MainWindow::acceptsettings()
         udpsockets_bottom_textedit[ii].data()->deleteLater();
         udpsockets_bottom_textedit.removeAt(ii);
     }
+
     //connect ports
     if(settingsdialog->udp_for_decoded_messages_enabled)
     {
@@ -1215,6 +1218,7 @@ void MainWindow::acceptsettings()
             udpsockets_bottom_textedit[ii].data()->connectToHost(settingsdialog->udp_for_decoded_messages_address[ii], settingsdialog->udp_for_decoded_messages_port[ii]);
         }
     }
+    */
 
     if(settingsdialog->loggingenable)compresseddiskwriter->setLogDir(settingsdialog->loggingdirectory);
     else compresseddiskwriter->setLogDir("");
@@ -1435,6 +1439,8 @@ void MainWindow::ACARSslot(ACARSItem &acarsitem)
 
         if((!settingsdialog->dropnontextmsgs)||(!acarsitem.message.isEmpty()&&(!acarsitem.nonacars)))
         {
+            /*
+             * TODO:
             if(settingsdialog->udp_for_decoded_messages_enabled)//((settingsdialog->udp_for_decoded_messages_enabled)&&(arincparser.adownlinkbasicreportgroup.valid))
             {
                 //send bottom text window to all udp sockects
@@ -1453,6 +1459,7 @@ void MainWindow::ACARSslot(ACARSItem &acarsitem)
             }
             ui->inputwidget->appendPlainText(humantext);
             log(humantext);
+            */
         }
     }
 
@@ -1576,6 +1583,8 @@ void MainWindow::ACARSslot(ACARSItem &acarsitem)
         //output result to udp and screen
         if((!settingsdialog->dropnontextmsgs)||(!message.isEmpty()&&(!acarsitem.nonacars)))
         {
+            /*
+             * TODO:
             if(settingsdialog->udp_for_decoded_messages_enabled)
             {
                 //send bottom text window to all udp sockects
@@ -1594,6 +1603,7 @@ void MainWindow::ACARSslot(ACARSItem &acarsitem)
             }
             ui->inputwidget->appendPlainText(humantext);
             log(humantext);
+            */
         }
     }
 }
@@ -1661,6 +1671,8 @@ void MainWindow::on_actionReduce_CPU_triggered(bool checked)
 //periodic info to be sent via UDP if JSON format used
 void MainWindow::statusToUDPifJSONset()
 {
+    /*
+     * TODO:
     if((settingsdialog->udp_for_decoded_messages_enabled)&&(settingsdialog->msgdisplayformat=="JSON"))
     {
 
@@ -1690,4 +1702,5 @@ void MainWindow::statusToUDPifJSONset()
         }
 
     }
+    */
 }

@@ -18,6 +18,14 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
 {
     ui->setupUi(this);
     populatesettings();
+
+    // NOTE: I know this is haphazard but the column width should add together to under 431 (width of QTableWidget)
+    ui->outputListTable->setColumnWidth(0, 25);
+    ui->outputListTable->setColumnWidth(1, 85);
+    ui->outputListTable->setColumnWidth(2, 260);
+    ui->outputListTable->setColumnWidth(3, 55);
+    ui->outputListTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+    ui->outputListTable->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft);
 }
 
 SettingsDialog::~SettingsDialog()
@@ -28,7 +36,7 @@ SettingsDialog::~SettingsDialog()
 void SettingsDialog::populatepublicvars()
 {
 
-    msgdisplayformat=ui->comboBoxDisplayformat->currentText();
+    // TODO: msgdisplayformat=ui->comboBoxDisplayformat->currentText();
     dropnontextmsgs=ui->checkBoxdropnontextmsgs->isChecked();
     donotdisplaysus.clear();
     QRegExp rx("([\\da-fA-F]+)");
@@ -65,6 +73,8 @@ void SettingsDialog::populatepublicvars()
     station_id=ui->lineEditstationid->text();
     
     //bottom text window output settings
+    /*
+     * TODO:
     QStringList hosts=ui->lineEditudpoutputdecodedmessagesaddress->text().simplified().split(" ");
     udp_for_decoded_messages_address.clear();
     udp_for_decoded_messages_port.clear();
@@ -96,7 +106,7 @@ void SettingsDialog::populatepublicvars()
          }
     }
     udp_for_decoded_messages_enabled=ui->checkOutputDecodedMessageToUDPPort->isChecked();
-
+    */
 
     //ads message output using SBS1 protocol over TCP
     QString hostaddr=ui->lineEdittcpoutputadsmessagesaddress->text().section(':',0,0);
@@ -160,7 +170,7 @@ void SettingsDialog::populatesettings()
 
     //load settings
     QSettings settings("Jontisoft", settings_name);
-    ui->comboBoxDisplayformat->setCurrentIndex(settings.value("comboBoxDisplayformat",2).toInt());
+    // TODO: ui->comboBoxDisplayformat->setCurrentIndex(settings.value("comboBoxDisplayformat",2).toInt());
     ui->lineEditdonotdisplaysus->setText(settings.value("lineEditdonotdisplaysus","26 0A C0 00 14 16").toString());
     ui->checkBoxdropnontextmsgs->setChecked(settings.value("checkBoxdropnontextmsgs",true).toBool());
     ui->comboBoxsoundcard->setCurrentText(settings.value("comboBoxsoundcard","").toString());
@@ -171,8 +181,8 @@ void SettingsDialog::populatesettings()
     ui->lineEditplanelookup->setText(settings.value("lineEditplanelookup","http://www.flightradar24.com/data/airplanes/{REG}").toString());
     ui->checkBoxonlyuselibacars->setChecked(settings.value("checkBoxonlyuselibacars",false).toBool());
     ui->checkBoxbeepontextmessage->setChecked(settings.value("checkBoxbeepontextmessage",true).toBool());
-    ui->lineEditudpoutputdecodedmessagesaddress->setText(settings.value("lineEditudpoutputdecodedmessagesaddress","localhost:18765").toString());
-    ui->checkOutputDecodedMessageToUDPPort->setChecked(settings.value("checkOutputDecodedMessageToUDPPort",false).toBool());
+    // TODO: ui->lineEditudpoutputdecodedmessagesaddress->setText(settings.value("lineEditudpoutputdecodedmessagesaddress","localhost:18765").toString());
+    // TODO: ui->checkOutputDecodedMessageToUDPPort->setChecked(settings.value("checkOutputDecodedMessageToUDPPort",false).toBool());
     ui->lineEdittcpoutputadsmessagesaddress->setText(settings.value("lineEdittcpoutputadsmessagesaddress","0.0.0.0:30003").toString());
     ui->checkOutputADSMessageToTCP->setChecked(settings.value("checkOutputADSMessageToTCP",false).toBool());
     ui->checkTCPAsClient->setChecked(settings.value("checkTCPAsClient",false).toBool());
@@ -215,7 +225,7 @@ void SettingsDialog::accept()
 
     //save settings
     QSettings settings("Jontisoft", settings_name);
-    settings.setValue("comboBoxDisplayformat", ui->comboBoxDisplayformat->currentIndex());
+    // TODO: settings.setValue("comboBoxDisplayformat", ui->comboBoxDisplayformat->currentIndex());
     settings.setValue("lineEditdonotdisplaysus", ui->lineEditdonotdisplaysus->text());
     settings.setValue("checkBoxdropnontextmsgs", ui->checkBoxdropnontextmsgs->isChecked());
     settings.setValue("comboBoxsoundcard", ui->comboBoxsoundcard->currentText());
@@ -226,8 +236,8 @@ void SettingsDialog::accept()
     settings.setValue("lineEditplanelookup", ui->lineEditplanelookup->text());
     settings.setValue("checkBoxonlyuselibacars", ui->checkBoxonlyuselibacars->isChecked());
     settings.setValue("checkBoxbeepontextmessage", ui->checkBoxbeepontextmessage->isChecked());
-    settings.setValue("lineEditudpoutputdecodedmessagesaddress", ui->lineEditudpoutputdecodedmessagesaddress->text());
-    settings.setValue("checkOutputDecodedMessageToUDPPort", ui->checkOutputDecodedMessageToUDPPort->isChecked());  
+    // TODO: settings.setValue("lineEditudpoutputdecodedmessagesaddress", ui->lineEditudpoutputdecodedmessagesaddress->text());
+    // TODO: settings.setValue("checkOutputDecodedMessageToUDPPort", ui->checkOutputDecodedMessageToUDPPort->isChecked());
     settings.setValue("lineEdittcpoutputadsmessagesaddress", ui->lineEdittcpoutputadsmessagesaddress->text());
     settings.setValue("checkOutputADSMessageToTCP", ui->checkOutputADSMessageToTCP->isChecked());
     settings.setValue("checkTCPAsClient", ui->checkTCPAsClient->isChecked());
@@ -278,3 +288,24 @@ void SettingsDialog::on_checkOutputADSMessageToTCP_stateChanged(int arg1)
     if(!arg1)ui->checkTCPAsClient->setEnabled(false);
      else ui->checkTCPAsClient->setEnabled(true);
 }
+
+void SettingsDialog::on_newEntryButton_clicked()
+{
+    qDebug() << "New Button Clicked";
+}
+
+void SettingsDialog::on_editEntryButton_clicked()
+{
+    qDebug() << "Edit Button Clicked";
+}
+
+void SettingsDialog::on_removeEntryButton_clicked()
+{
+    qDebug() << "Remove Button Clicked";
+}
+
+void SettingsDialog::on_setUiOutButton_clicked()
+{
+    qDebug() << "Set UI Button Clicked";
+}
+
