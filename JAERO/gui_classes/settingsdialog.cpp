@@ -20,17 +20,11 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     populatesettings();
 
     // NOTE: I know this is haphazard but the column width should add together to under 431 (width of QTableWidget)
-    ui->outputListTable->setColumnWidth(0, 25);
-    ui->outputListTable->setColumnWidth(1, 85);
-    ui->outputListTable->setColumnWidth(2, 260);
-    ui->outputListTable->setColumnWidth(3, 55);
+    ui->outputListTable->setColumnWidth(0, 85);
+    ui->outputListTable->setColumnWidth(1, 260);
+    ui->outputListTable->setColumnWidth(2, 55);
     ui->outputListTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Fixed);
     ui->outputListTable->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft);
-
-    if (ui->outputListTable->rowCount() == 0) {
-        ui->editEntryButton->setDisabled(true);
-        ui->removeEntryButton->setDisabled(true);
-    }
 }
 
 SettingsDialog::~SettingsDialog()
@@ -306,22 +300,18 @@ void SettingsDialog::on_newEntryButton_clicked()
 
 void SettingsDialog::on_editEntryButton_clicked()
 {
-    qDebug() << "Edit Button Clicked";
+    QModelIndexList selection = ui->outputListTable->selectionModel()->selectedRows();
+
+    // NOTE: we explicitly disabled multiselection and made sure edit/remove buttons are disabled if no selection is active
+
+    qDebug() << "Editing row " << selection.at(0).row();
 }
 
 void SettingsDialog::on_removeEntryButton_clicked()
 {
     QModelIndexList selection = ui->outputListTable->selectionModel()->selectedRows();
 
-    if (selection.count() == 0) {
-        QMessageBox msgBox(this);
-        msgBox.setText("Oof");
-        msgBox.exec();
-
-        return;
-    }
-
-    // NOTE: it is unlikely that more than one row will be selected
+    // NOTE: we explicitly disabled multiselection and made sure edit/remove buttons are disabled if no selection is active
 
     ui->outputListTable->removeRow(selection.at(0).row());
 
@@ -331,8 +321,11 @@ void SettingsDialog::on_removeEntryButton_clicked()
     }
 }
 
-void SettingsDialog::on_setUiOutButton_clicked()
+void SettingsDialog::on_outputListTable_itemSelectionChanged()
 {
-    qDebug() << "Set UI Button Clicked";
+    if (ui->outputListTable->selectionModel()->selectedRows().count() > 0) {
+        ui->editEntryButton->setDisabled(false);
+        ui->removeEntryButton->setDisabled(false);
+    }
 }
 

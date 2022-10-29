@@ -88,7 +88,7 @@ private slots:
     void on_newEntryButton_clicked();
     void on_editEntryButton_clicked();
     void on_removeEntryButton_clicked();
-    void on_setUiOutButton_clicked();
+    void on_outputListTable_itemSelectionChanged();
 };
 
 #endif // SETTINGSDIALOG_H
