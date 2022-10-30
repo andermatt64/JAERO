@@ -195,7 +195,7 @@ void SettingsDialog::populatesettings()
             ui->outputListTable->insertRow(i);
             ui->outputListTable->setItem(i,0,new QTableWidgetItem(outputformats.at(settings.value("format",0).toInt())));
             ui->outputListTable->setItem(i,1,new QTableWidgetItem(settings.value("host","localhost").toString()));
-            ui->outputListTable->setItem(i,2,new QTableWidgetItem(settings.value("port",18765).toInt()));
+            ui->outputListTable->setItem(i,2,new QTableWidgetItem(QString("%1").arg(settings.value("port",18765).toInt())));
         }
         settings.endArray();
     }
