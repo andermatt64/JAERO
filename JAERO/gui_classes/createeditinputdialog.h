@@ -13,7 +13,7 @@ class CreateEditInputDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit CreateEditInputDialog(QWidget *parent = nullptr, bool isEdit = false);
+    explicit CreateEditInputDialog(QWidget *parent = nullptr, const QStringList &outputfmts = {}, bool isEdit = false);
     ~CreateEditInputDialog();
 
     QString getFormat() const;
@@ -24,9 +24,9 @@ public:
     void setHost(const QString &host);
     void setPort(const QString &port);
 
-    static bool addEntry(QWidget *parent, QTableWidget *output)
+    static bool addEntry(QWidget *parent, QTableWidget *output, const QStringList &outputfmts)
     {
-        CreateEditInputDialog dialog(parent);
+        CreateEditInputDialog dialog(parent,outputfmts);
         dialog.setWindowFlags(Qt::Dialog|Qt::FramelessWindowHint);
 
         if (dialog.exec() == QDialog::Accepted)
@@ -43,9 +43,9 @@ public:
         return false;
     }
 
-    static bool editEntry(QWidget *parent, QTableWidget *output, int row)
+    static bool editEntry(QWidget *parent, QTableWidget *output, const QStringList &outputfmts, int row)
     {
-        CreateEditInputDialog dialog(parent,true);
+        CreateEditInputDialog dialog(parent,outputfmts,true);
         dialog.setWindowFlags(Qt::Dialog|Qt::FramelessWindowHint);
         dialog.setFormat(output->item(row,0)->text());
         dialog.setHost(output->item(row,1)->text());

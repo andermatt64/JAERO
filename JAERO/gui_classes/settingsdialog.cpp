@@ -18,6 +18,8 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     ui(new Ui::SettingsDialog)
 {
     ui->setupUi(this);
+    ui->comboBoxoutputfmt->insertItems(0,outputformats);
+
     populatesettings();
 
     // NOTE: I know this is haphazard but the column width should add together to under 431 (width of QTableWidget)
@@ -104,8 +106,8 @@ void SettingsDialog::populatepublicvars()
               qDebug()<<"Can't set UDP address:port as it's already used";
          }
     }
-    udp_for_decoded_messages_enabled=ui->checkOutputDecodedMessageToUDPPort->isChecked();
     */
+    udp_for_decoded_messages_enabled=ui->checkBoxenablefeeding->isChecked();
 
     //ads message output using SBS1 protocol over TCP
     QString hostaddr=ui->lineEdittcpoutputadsmessagesaddress->text().section(':',0,0);
@@ -169,7 +171,7 @@ void SettingsDialog::populatesettings()
 
     //load settings
     QSettings settings("Jontisoft", settings_name);
-    // TODO: ui->comboBoxDisplayformat->setCurrentIndex(settings.value("comboBoxDisplayformat",2).toInt());
+    ui->comboBoxoutputfmt->setCurrentIndex(settings.value("comboBoxDisplayformat",2).toInt());
     ui->lineEditdonotdisplaysus->setText(settings.value("lineEditdonotdisplaysus","26 0A C0 00 14 16").toString());
     ui->checkBoxdropnontextmsgs->setChecked(settings.value("checkBoxdropnontextmsgs",true).toBool());
     ui->comboBoxsoundcard->setCurrentText(settings.value("comboBoxsoundcard","").toString());
@@ -180,8 +182,44 @@ void SettingsDialog::populatesettings()
     ui->lineEditplanelookup->setText(settings.value("lineEditplanelookup","http://www.flightradar24.com/data/airplanes/{REG}").toString());
     ui->checkBoxonlyuselibacars->setChecked(settings.value("checkBoxonlyuselibacars",false).toBool());
     ui->checkBoxbeepontextmessage->setChecked(settings.value("checkBoxbeepontextmessage",true).toBool());
-    // TODO: ui->lineEditudpoutputdecodedmessagesaddress->setText(settings.value("lineEditudpoutputdecodedmessagesaddress","localhost:18765").toString());
-    // TODO: ui->checkOutputDecodedMessageToUDPPort->setChecked(settings.value("checkOutputDecodedMessageToUDPPort",false).toBool());
+
+    ui->outputListTable->setRowCount(0);
+
+    int size = settings.beginReadArray("feeders");
+    if (size>0)
+    {
+        for (int i=0;i<size;i++)
+        {
+            settings.setArrayIndex(i);
+
+            ui->outputListTable->insertRow(i);
+            ui->outputListTable->setItem(i,0,new QTableWidgetItem(outputformats.at(settings.value("format",0).toInt())));
+            ui->outputListTable->setItem(i,1,new QTableWidgetItem(settings.value("host","localhost").toString()));
+            ui->outputListTable->setItem(i,2,new QTableWidgetItem(settings.value("port",18765).toInt()));
+        }
+        settings.endArray();
+    }
+    else
+    {
+        QStringList hosts=settings.value("lineEditudpoutputdecodedmessagesaddress","").toString().simplified().split(" ");
+        for (int i=0;i<hosts.size();i++)
+        {
+            QString host=hosts[i];
+            if (host.size()>0)
+            {
+                QString hostaddress_string=host.section(':',0,0).simplified();
+                quint16 hostport=host.section(':',1,1).toInt();
+                if (hostport==0) hostport=18765;
+
+                ui->outputListTable->insertRow(i);
+                ui->outputListTable->setItem(i,0,new QTableWidgetItem(outputformats.at(ui->comboBoxoutputfmt->currentIndex())));
+                ui->outputListTable->setItem(i,1,new QTableWidgetItem(hostaddress_string));
+                ui->outputListTable->setItem(i,2,new QTableWidgetItem(QString("%1").arg(hostport)));
+            }
+        }
+    }
+
+    ui->checkBoxenablefeeding->setChecked(settings.value("checkOutputDecodedMessageToUDPPort",false).toBool());
     ui->lineEdittcpoutputadsmessagesaddress->setText(settings.value("lineEdittcpoutputadsmessagesaddress","0.0.0.0:30003").toString());
     ui->checkOutputADSMessageToTCP->setChecked(settings.value("checkOutputADSMessageToTCP",false).toBool());
     ui->checkTCPAsClient->setChecked(settings.value("checkTCPAsClient",false).toBool());
@@ -224,7 +262,7 @@ void SettingsDialog::accept()
 
     //save settings
     QSettings settings("Jontisoft", settings_name);
-    // TODO: settings.setValue("comboBoxDisplayformat", ui->comboBoxDisplayformat->currentIndex());
+    settings.setValue("comboBoxDisplayformat", ui->comboBoxoutputfmt->currentIndex());
     settings.setValue("lineEditdonotdisplaysus", ui->lineEditdonotdisplaysus->text());
     settings.setValue("checkBoxdropnontextmsgs", ui->checkBoxdropnontextmsgs->isChecked());
     settings.setValue("comboBoxsoundcard", ui->comboBoxsoundcard->currentText());
@@ -235,8 +273,22 @@ void SettingsDialog::accept()
     settings.setValue("lineEditplanelookup", ui->lineEditplanelookup->text());
     settings.setValue("checkBoxonlyuselibacars", ui->checkBoxonlyuselibacars->isChecked());
     settings.setValue("checkBoxbeepontextmessage", ui->checkBoxbeepontextmessage->isChecked());
-    // TODO: settings.setValue("lineEditudpoutputdecodedmessagesaddress", ui->lineEditudpoutputdecodedmessagesaddress->text());
-    // TODO: settings.setValue("checkOutputDecodedMessageToUDPPort", ui->checkOutputDecodedMessageToUDPPort->isChecked());
+
+    settings.beginWriteArray("feeders");
+    for (int i=0;i<ui->outputListTable->rowCount();i++)
+    {
+        settings.setArrayIndex(i);
+
+        int idx=outputformats.indexOf(ui->outputListTable->item(i,0)->text());
+        if (idx==-1) idx=outputformats.count()-1;
+
+        settings.setValue("format", idx);
+        settings.setValue("host", ui->outputListTable->item(i,1)->text());
+        settings.setValue("port", ui->outputListTable->item(i,2)->text());
+    }
+    settings.endArray();
+
+    settings.setValue("checkOutputDecodedMessageToUDPPort", ui->checkBoxenablefeeding->isChecked());
     settings.setValue("lineEdittcpoutputadsmessagesaddress", ui->lineEdittcpoutputadsmessagesaddress->text());
     settings.setValue("checkOutputADSMessageToTCP", ui->checkOutputADSMessageToTCP->isChecked());
     settings.setValue("checkTCPAsClient", ui->checkTCPAsClient->isChecked());
@@ -290,7 +342,7 @@ void SettingsDialog::on_checkOutputADSMessageToTCP_stateChanged(int arg1)
 
 void SettingsDialog::on_newEntryButton_clicked()
 {
-    CreateEditInputDialog::addEntry(this, ui->outputListTable);
+    CreateEditInputDialog::addEntry(this, ui->outputListTable, outputformats);
 }
 
 void SettingsDialog::on_editEntryButton_clicked()
@@ -299,7 +351,7 @@ void SettingsDialog::on_editEntryButton_clicked()
 
     // NOTE: we explicitly disabled multiselection and made sure edit/remove buttons are disabled if no selection is active
 
-    CreateEditInputDialog::editEntry(this, ui->outputListTable, selection.at(0).row());
+    CreateEditInputDialog::editEntry(this, ui->outputListTable, outputformats, selection.at(0).row());
 }
 
 void SettingsDialog::on_removeEntryButton_clicked()

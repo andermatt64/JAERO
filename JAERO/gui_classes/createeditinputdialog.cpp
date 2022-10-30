@@ -3,12 +3,13 @@
 
 #include <QPushButton>
 
-CreateEditInputDialog::CreateEditInputDialog(QWidget *parent, bool isEdit) :
+CreateEditInputDialog::CreateEditInputDialog(QWidget *parent, const QStringList &outputfmts, bool isEdit) :
     QDialog(parent),
     ui(new Ui::CreateEditInputDialog)
 {
     ui->setupUi(this);
 
+    ui->comboBoxformat->insertItems(0,outputfmts);
     ui->lineEditfeederport->setValidator(new QIntValidator(1, 65535, this));
     ui->groupBox->setTitle(isEdit?"Edit Feeder Entry":"Add Feeder Entry");
 
@@ -32,7 +33,9 @@ QString CreateEditInputDialog::getPort() const
 
 void CreateEditInputDialog::setFormat(const QString &fmt)
 {
-    ui->comboBoxformat->setCurrentText(fmt);
+    int idx=ui->comboBoxformat->findText(fmt);
+    if (idx==-1) idx=ui->comboBoxformat->count()-1;
+    ui->comboBoxformat->setCurrentIndex(idx);
 }
 
 void CreateEditInputDialog::setHost(const QString &host)

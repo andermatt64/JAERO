@@ -48,7 +48,7 @@ public:
 
     // TODO: QList<QHostAddress> udp_for_decoded_messages_address;
     // TODO: QList<quint16> udp_for_decoded_messages_port;
-    // TODO: bool udp_for_decoded_messages_enabled;
+    bool udp_for_decoded_messages_enabled;
 
 
     QHostAddress tcp_for_ads_messages_address;
@@ -74,7 +74,8 @@ public:
     bool mqtt_enable;
 
 private:
-    Ui::SettingsDialog *ui;    
+    Ui::SettingsDialog *ui;
+    QStringList outputformats = {"1", "2", "3", "JSON", "JSONdump"};
     void populatepublicvars();
 
 protected:
