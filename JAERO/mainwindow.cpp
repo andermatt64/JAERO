@@ -1220,6 +1220,15 @@ void MainWindow::acceptsettings()
     }
     */
 
+    for (int i=0;i<feeder_udp_socks.size();i++)
+    {
+        feeder_udp_socks[i].data()->close();
+    }
+    for (int i=0;i<settingsdialog->udp_feeders.count();i++)
+    {
+
+    }
+
     if(settingsdialog->loggingenable)compresseddiskwriter->setLogDir(settingsdialog->loggingdirectory);
     else compresseddiskwriter->setLogDir("");
 
@@ -1286,6 +1295,11 @@ void MainWindow::CChannelAssignmentSlot(CChannelAssignmentItem &item)
     }
 
     ui->plainTextEdit_cchan_assignment->appendPlainText(message);
+}
+
+QString MainWindow::formatACARSItem(ACARSItem &acarsitem, const QString &msgfmt)
+{
+
 }
 
 //--new method of mainwindow getting second channel from aerol
