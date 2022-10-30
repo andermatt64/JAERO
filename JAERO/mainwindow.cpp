@@ -1195,6 +1195,7 @@ void MainWindow::acceptsettings()
     {
         feeder_udp_socks[i].data()->close();
     }
+    //TODO: clear feeder_formats
 
     //resize number of ports
     int number_of_ports_wanted=settingsdialog->udp_feeders.count();
@@ -1215,6 +1216,8 @@ void MainWindow::acceptsettings()
         {
             QJsonObject info = settingsdialog->udp_feeders[i].toObject();
             feeder_udp_socks[i].data()->connectToHost(info["host"].toString(), info["port"].toInt());
+
+            //TODO: setup feeder_formats for info["format"].toString()
         }
     }
 
@@ -1386,26 +1389,56 @@ bool MainWindow::formatACARSItem(const ACARSItem &acarsitem, const QString &msgf
 
         if(acarsitem.nonacars)
         {
-            if(acarsitem.message.isEmpty())humantext+=((QString)"").sprintf("AES:%06X GES:%02X REG:%s",acarsitem.isuitem.AESID,acarsitem.isuitem.GESID,acarsitem.PLANEREG.data());
+            if(acarsitem.message.isEmpty())
+            {
+                humantext+=QString("AES:%1 GES:%2 REG:%3")
+                               .arg(upperHex(acarsitem.isuitem.AESID, 6, 16, QChar('0')))
+                               .arg(upperHex(acarsitem.isuitem.GESID, 2, 16, QChar('0')))
+                               .arg(acarsitem.PLANEREG.data());
+            }
             else
             {
                 QString message=acarsitem.message;
                 message.replace('\r','\n');
                 message.replace("\n\n","\n");
                 message.replace('\n',"●");
-                humantext+=(((QString)"").sprintf("AES:%06X GES:%02X REG:%s ",acarsitem.isuitem.AESID,acarsitem.isuitem.GESID,acarsitem.PLANEREG.data()))+message;
+                humantext+=QString("AES:%1 GES:%2 REG:%3 %4")
+                               .arg(upperHex(acarsitem.isuitem.AESID, 6, 16, QChar('0')))
+                               .arg(upperHex(acarsitem.isuitem.GESID, 2, 16, QChar('0')))
+                               .arg(acarsitem.PLANEREG.data())
+                               .arg(message);
             }
         }
         else
         {
-            if(acarsitem.message.isEmpty())humantext+=((QString)"").sprintf("AES:%06X GES:%02X %c %s %s %c%c %c",acarsitem.isuitem.AESID,acarsitem.isuitem.GESID,acarsitem.MODE,acarsitem.PLANEREG.data(),TAKstr.data(),(uchar)acarsitem.LABEL[0],label1,acarsitem.BI);
+            if(acarsitem.message.isEmpty())
+            {
+                humantext+=QString("AES:%1 GES:%2 %3 %4 %5 %6%7 %8")
+                               .arg(upperHex(acarsitem.isuitem.AESID, 6, 16, QChar('0')))
+                               .arg(upperHex(acarsitem.isuitem.GESID, 2, 16, QChar('0')))
+                               .arg(QChar(acarsitem.MODE))
+                               .arg(acarsitem.PLANEREG.data())
+                               .arg(TAKstr.data())
+                               .arg(QChar(acarsitem.LABEL[0]))
+                               .arg(QChar(label1))
+                               .arg(QChar(acarsitem.BI));
+            }
             else
             {
                 QString message=acarsitem.message;
                 message.replace('\r','\n');
                 message.replace("\n\n","\n");
                 message.replace('\n',"●");
-                humantext+=(((QString)"").sprintf("AES:%06X GES:%02X %c %s %s %c%c %c ",acarsitem.isuitem.AESID,acarsitem.isuitem.GESID,acarsitem.MODE,acarsitem.PLANEREG.data(),TAKstr.data(),(uchar)acarsitem.LABEL[0],label1,acarsitem.BI))+message;
+                humantext+=QString("AES:%1 GES:%2 %3 %4 %5 %6%7 %8 %9")
+                               .arg(upperHex(acarsitem.isuitem.AESID, 6, 16, QChar('0')))
+                               .arg(upperHex(acarsitem.isuitem.GESID, 2, 16, QChar('0')))
+                               .arg(QChar(acarsitem.MODE))
+                               .arg(acarsitem.PLANEREG.data())
+                               .arg(TAKstr.data())
+                               .arg(QChar(acarsitem.LABEL[0]))
+                               .arg(QChar(label1))
+                               .arg(QChar(acarsitem.BI))
+                               .arg(message);
             }
         }
 
@@ -1429,8 +1462,25 @@ bool MainWindow::formatACARSItem(const ACARSItem &acarsitem, const QString &msgf
 
         QByteArray PLANEREG;
         PLANEREG=(((QString)".").repeated(7-acarsitem.PLANEREG.size())).toLatin1()+acarsitem.PLANEREG;
-        if(acarsitem.nonacars) humantext+=((QString)"").sprintf("AES:%06X GES:%02X   %s       ",acarsitem.isuitem.AESID,acarsitem.isuitem.GESID,PLANEREG.data());
-        else humantext+=((QString)"").sprintf("AES:%06X GES:%02X %c %s %s %c%c %c",acarsitem.isuitem.AESID,acarsitem.isuitem.GESID,acarsitem.MODE,PLANEREG.data(),TAKstr.data(),(uchar)acarsitem.LABEL[0],label1,acarsitem.BI);
+        if(acarsitem.nonacars)
+        {
+            humantext+=QString("AES:%1 GES:%2   %3       ")
+                           .arg(upperHex(acarsitem.isuitem.AESID, 6, 16, QChar('0')))
+                           .arg(upperHex(acarsitem.isuitem.GESID, 2, 16, QChar('0')))
+                           .arg(PLANEREG.data());
+        }
+        else
+        {
+            humantext+=QString("AES:%1 GES:%2 %3 %4 %5 %6%7 %8")
+                           .arg(upperHex(acarsitem.isuitem.AESID, 6, 16, QChar('0')))
+                           .arg(upperHex(acarsitem.isuitem.GESID, 2, 16, QChar('0')))
+                           .arg(acarsitem.MODE)
+                           .arg(PLANEREG.data())
+                           .arg(TAKstr.data())
+                           .arg(QChar(acarsitem.LABEL[0]))
+                           .arg(QChar(label1))
+                           .arg(QChar(acarsitem.BI));
+        }
 
         //if(acarsitem.message.isEmpty())humantext+=((QString)"").sprintf("AES:%06X GES:%02X %c %s %s %c%c %c",acarsitem.isuitem.AESID,acarsitem.isuitem.GESID,acarsitem.MODE,acarsitem.PLANEREG.data(),TAKstr.data(),(uchar)acarsitem.LABEL[0],label1,acarsitem.BI)+"\n";
         //else humantext+=(((QString)"").sprintf("AES:%06X GES:%02X %c %s %s %c%c %c",acarsitem.isuitem.AESID,acarsitem.isuitem.GESID,acarsitem.MODE,acarsitem.PLANEREG.data(),TAKstr.data(),(uchar)acarsitem.LABEL[0],label1,acarsitem.BI))+"\n\n\t"+message+"\n";
@@ -1488,17 +1538,17 @@ bool MainWindow::formatACARSItem(const ACARSItem &acarsitem, const QString &msgf
             json["TIME_UTC"]=time.toUTC().toString("yyyy-MM-dd hh:mm:ss");
             json["NAME"]=QApplication::applicationDisplayName();
             json["NONACARS"]=acarsitem.nonacars;
-            json["AESID"]=((QString)"").sprintf("%06X",acarsitem.isuitem.AESID);
-            json["GESID"]=((QString)"").sprintf("%02X",acarsitem.isuitem.GESID);
-            json["QNO"]=((QString)"").sprintf("%02X",acarsitem.isuitem.QNO);
-            json["REFNO"]=((QString)"").sprintf("%02X",acarsitem.isuitem.REFNO);
+            json["AESID"]=upperHex(acarsitem.isuitem.AESID, 6, 16, QChar('0'));
+            json["GESID"]=upperHex(acarsitem.isuitem.GESID, 2, 16, QChar('0'));
+            json["QNO"]=upperHex(acarsitem.isuitem.QNO, 2, 16, QChar('0'));
+            json["REFNO"]=upperHex(acarsitem.isuitem.REFNO, 2, 16, QChar('0'));
             json["REG"]=(QString)acarsitem.PLANEREG;
             //add acars message things
             if(!acarsitem.nonacars)
             {
                 json["MODE"]=(QString)acarsitem.MODE;
                 json["TAK"]=(QString)TAKstr;
-                json["LABEL"]=(((QString)"").sprintf("%c%c",(uchar)acarsitem.LABEL[0],label1));
+                json["LABEL"]=QString("%1%2").arg(QChar(acarsitem.LABEL[0])).arg(QChar(label1));
                 json["BI"]=(QString)acarsitem.BI;
             }
             //if there is a message then add it and any parsing using arincparser
@@ -1520,11 +1570,11 @@ bool MainWindow::formatACARSItem(const ACARSItem &acarsitem, const QString &msgf
 
             QJsonObject aes;
             aes["type"]="Aircraft Earth Station";
-            aes["addr"]=((QString)"").sprintf("%06X",acarsitem.isuitem.AESID);
+            aes["addr"]=upperHex(acarsitem.isuitem.AESID, 6, 16, QChar('0'));
 
             QJsonObject ges;
             ges["type"]="Ground Earth Station";
-            ges["addr"]=((QString)"").sprintf("%02X",acarsitem.isuitem.GESID);
+            ges["addr"]=upperHex(acarsitem.isuitem.GESID, 2, 16, QChar('0'));
 
             if(!acarsitem.nonacars)
             {
@@ -1532,7 +1582,7 @@ bool MainWindow::formatACARSItem(const ACARSItem &acarsitem, const QString &msgf
                 acars["mode"]=(QString)acarsitem.MODE;
                 acars["ack"]=(QString)TAKstr;
                 acars["blk_id"]=(QString)acarsitem.BI;
-                acars["label"]=(((QString)"").sprintf("%c%c",(uchar)acarsitem.LABEL[0],label1));
+                acars["label"]=QString("%1%2").arg(QChar(acarsitem.LABEL[0])).arg(QChar(label1));
                 acars["reg"]=(QString)acarsitem.PLANEREG;
 
                 if(!arincparser.downlinkheader.flightid.isEmpty())acars["flight"]=arincparser.downlinkheader.flightid;
@@ -1553,15 +1603,15 @@ bool MainWindow::formatACARSItem(const ACARSItem &acarsitem, const QString &msgf
                 isu["acars"]=QJsonValue(acars);
             }
 
-            isu["refno"]=((QString)"").sprintf("%02X",acarsitem.isuitem.REFNO);
-            isu["qno"]=((QString)"").sprintf("%02X",acarsitem.isuitem.QNO);
+            isu["refno"]=upperHex(acarsitem.isuitem.REFNO, 2, 16, QChar('0'));
+            isu["qno"]=upperHex(acarsitem.isuitem.QNO, 2, 16, QChar('0'));
             isu["src"]=QJsonValue(acarsitem.downlink?aes:ges);
             isu["dst"]=QJsonValue(acarsitem.downlink?ges:aes);
 
             QJsonObject t;
             QDateTime ts=time.toUTC();
             t["sec"]=ts.toSecsSinceEpoch();
-            t["usec"]=(ts.toMSecsSinceEpoch() % 1000) * 1000;
+            //t["usec"]=(ts.toMSecsSinceEpoch() % 1000) * 1000;
             json["t"]=QJsonValue(t);
 
             json["isu"]=QJsonValue(isu);
@@ -1597,6 +1647,10 @@ void MainWindow::ACARSslot(ACARSItem &acarsitem)
         if(acarsitem.message[acarsitem.message.size()-1]=='\n'||acarsitem.message[acarsitem.message.size()-1]=='\r')linecnt--;
         if(linecnt>0)beep->play();//QApplication::beep();
     }
+
+    //TODO: get formatted message for display window
+
+    //TODO: enumerate feeder_udp_socks to send
 
     //this is how you can change the display format in the lowwer window
     if(settingsdialog->msgdisplayformat=="1")
@@ -1891,7 +1945,7 @@ void MainWindow::ACARSslot(ACARSItem &acarsitem)
             QJsonObject t;
             QDateTime ts=time.toUTC();
             t["sec"]=ts.toSecsSinceEpoch();
-            t["usec"]=(ts.toMSecsSinceEpoch() % 1000) * 1000;
+            //t["usec"]=(ts.toMSecsSinceEpoch() % 1000) * 1000;
             json["t"]=QJsonValue(t);
 
             json["isu"]=QJsonValue(isu);
