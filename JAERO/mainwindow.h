@@ -109,7 +109,7 @@ private:
     double last_EbNo;
 
     void setLedState(QLed *led, LedState state);
-    QString formatACARSItem(ACARSItem &acarsitem, const QString &msgfmt);
+    bool formatACARSItem(const ACARSItem &acarsitem, const QString &msgfmt, QString &humantext);
 
 protected:
     void closeEvent(QCloseEvent *event);
