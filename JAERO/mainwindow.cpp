@@ -1190,43 +1190,32 @@ void MainWindow::acceptsettings()
     planelog->planesfolder=settingsdialog->planesfolder;
     planelog->planelookup=settingsdialog->planelookup;
 
-    /*
-     * TODO:
-    //this is for bottom textbox udp output
     //disconnect ports
-    for(int ii=0;ii<udpsockets_bottom_textedit.size();ii++)
+    for (int i=0;i<feeder_udp_socks.size();i++)
     {
-        udpsockets_bottom_textedit[ii].data()->close();
+        feeder_udp_socks[i].data()->close();
     }
+
     //resize number of ports
-    int number_of_ports_wanted=qMin(settingsdialog->udp_for_decoded_messages_address.size(),settingsdialog->udp_for_decoded_messages_port.size());
-    while(udpsockets_bottom_textedit.size()<number_of_ports_wanted)
+    int number_of_ports_wanted=settingsdialog->udp_feeders.count();
+    while(feeder_udp_socks.size()<number_of_ports_wanted)
     {
-        udpsockets_bottom_textedit.push_back(new QUdpSocket(this));
+        feeder_udp_socks.push_back(new QUdpSocket(this));
     }
-    for(int ii=number_of_ports_wanted;ii<udpsockets_bottom_textedit.size();)
+    for (int i=number_of_ports_wanted;i<feeder_udp_socks.size();)
     {
-        udpsockets_bottom_textedit[ii].data()->deleteLater();
-        udpsockets_bottom_textedit.removeAt(ii);
+        feeder_udp_socks[i].data()->deleteLater();
+        feeder_udp_socks.removeAt(i);
     }
 
     //connect ports
     if(settingsdialog->udp_for_decoded_messages_enabled)
     {
-        for(int ii=0;ii<udpsockets_bottom_textedit.size();ii++)
+        for (int i=0;i<settingsdialog->udp_feeders.count();i++)
         {
-            udpsockets_bottom_textedit[ii].data()->connectToHost(settingsdialog->udp_for_decoded_messages_address[ii], settingsdialog->udp_for_decoded_messages_port[ii]);
+            QJsonObject info = settingsdialog->udp_feeders[i].toObject();
+            feeder_udp_socks[i].data()->connectToHost(info["host"].toString(), info["port"].toInt());
         }
-    }
-    */
-
-    for (int i=0;i<feeder_udp_socks.size();i++)
-    {
-        feeder_udp_socks[i].data()->close();
-    }
-    for (int i=0;i<settingsdialog->udp_feeders.count();i++)
-    {
-
     }
 
     if(settingsdialog->loggingenable)compresseddiskwriter->setLogDir(settingsdialog->loggingdirectory);
