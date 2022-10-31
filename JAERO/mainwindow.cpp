@@ -5,6 +5,7 @@
 #include <QLibrary>
 #include <QJsonObject>
 #include <QJsonDocument>
+#include <QHostInfo>
 
 //create a publisher based of the GUI MQTT settings
 //used for testing
@@ -19,6 +20,30 @@
 #endif
 
 #include "databasetext.h"
+
+
+template <typename T>
+QString upperHex(T a, int fieldWidth, int base, QChar fillChar)
+{
+    return QString("%1").arg(a, fieldWidth, base, fillChar).toUpper();
+}
+
+void udpSocketConnect(QUdpSocket &sock, const QString &host, quint16 port)
+{
+    QHostAddress addr(host);
+    if(addr.isNull())
+    {
+        qDebug() << "udpSocketConnect: " << host << " is not a valid address";
+
+        QList<QHostAddress> results=QHostInfo::fromName(host).addresses();
+        if(results.count()>0) addr=results[0];
+        qDebug() << "udpSocketConnect: addresses for " << host << " => " << results.count() << " count";
+    }
+
+    qDebug() << "udpSocketConnect: addr is valid = " << !addr.isNull();
+
+    if(!addr.isNull()) sock.connectToHost(addr, port);
+}
 
 void MainWindow::setLedState(QLed *led, LedState state)
 {
@@ -1215,7 +1240,7 @@ void MainWindow::acceptsettings()
         for (int i=0;i<settingsdialog->udp_feeders.count();i++)
         {
             QJsonObject info = settingsdialog->udp_feeders[i].toObject();
-            feeder_udp_socks[i].data()->connectToHost(info["host"].toString(), info["port"].toInt());
+            udpSocketConnect(*feeder_udp_socks[i].data(), info["host"].toString(), info["port"].toInt());
             feeder_formats.push_back(info["format"].toString());
         }
     }
@@ -1253,12 +1278,6 @@ void MainWindow::acceptsettings()
             beep=nullptr;
         }
    }
-}
-
-template <typename T>
-QString upperHex(T a, int fieldWidth, int base, QChar fillChar)
-{
-    return QString("%1").arg(a, fieldWidth, base, fillChar).toUpper();
 }
 
 void MainWindow::on_action_PlaneLog_triggered()
@@ -1739,7 +1758,7 @@ void MainWindow::ACARSslot(ACARSItem &acarsitem)
                     sock->close();
 
                     QJsonObject info=settingsdialog->udp_feeders[i].toObject();
-                    sock->connectToHost(info["host"].toString(), info["port"].toInt());
+                    udpSocketConnect(*sock, info["host"].toString(), info["port"].toInt());
                 }
                 if((sock->isOpen())&&(sock->isWritable()))sock->write((msgtext).toLatin1().data());
             }
@@ -1841,7 +1860,7 @@ void MainWindow::statusToUDPifJSONset()
                     sock->close();
 
                     QJsonObject info=settingsdialog->udp_feeders[i].toObject();
-                    sock->connectToHost(info["host"].toString(), info["port"].toInt());
+                    udpSocketConnect(*sock, info["host"].toString(), info["port"].toInt());
                 }
                 if((sock->isOpen())&&(sock->isWritable()))sock->write((humantext).toLatin1().data());
             }
