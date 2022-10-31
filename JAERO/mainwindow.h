@@ -69,6 +69,7 @@ private:
     AudioBurstMskDemodulator::Settings audioburstmskdemodulatorsettings;
 
     QList<QPointer<QUdpSocket> > feeder_udp_socks;
+    QList<QString> feeder_formats;
 
     //ambe->pcm->vorbis->ogg->disk
     QObject *ambe;
@@ -109,7 +110,7 @@ private:
     double last_EbNo;
 
     void setLedState(QLed *led, LedState state);
-    bool formatACARSItem(const ACARSItem &acarsitem, const QString &msgfmt, QString &humantext);
+    bool formatACARSItem(const ACARSItem &acarsitem, const QString &msgfmt, QString &humantext, bool &hasMessage);
 
 protected:
     void closeEvent(QCloseEvent *event);

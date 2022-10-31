@@ -1195,7 +1195,7 @@ void MainWindow::acceptsettings()
     {
         feeder_udp_socks[i].data()->close();
     }
-    //TODO: clear feeder_formats
+    feeder_formats.clear();
 
     //resize number of ports
     int number_of_ports_wanted=settingsdialog->udp_feeders.count();
@@ -1216,8 +1216,7 @@ void MainWindow::acceptsettings()
         {
             QJsonObject info = settingsdialog->udp_feeders[i].toObject();
             feeder_udp_socks[i].data()->connectToHost(info["host"].toString(), info["port"].toInt());
-
-            //TODO: setup feeder_formats for info["format"].toString()
+            feeder_formats.push_back(info["format"].toString());
         }
     }
 
@@ -1295,7 +1294,7 @@ QString upperHex(T a, int fieldWidth, int base, QChar fillChar)
     return QString("%1").arg(a, fieldWidth, base, fillChar).toUpper();
 }
 
-bool MainWindow::formatACARSItem(const ACARSItem &acarsitem, const QString &msgfmt, QString &humantext)
+bool MainWindow::formatACARSItem(const ACARSItem &acarsitem, const QString &msgfmt, QString &humantext, bool &hasMessage)
 {
     QByteArray TAKstr;
     TAKstr+=acarsitem.TAK;
@@ -1376,7 +1375,8 @@ bool MainWindow::formatACARSItem(const ACARSItem &acarsitem, const QString &msgf
             //byte&=0x7F;
             humantext+=QString("%1 ").arg(byte, 2, 16, QChar('0')).toUpper();
         }
-        humantext+=" )";
+        humantext+=" )\n";
+        hasMessage=!acarsitem.message.isEmpty();
         return true;
     }
 
@@ -1443,6 +1443,8 @@ bool MainWindow::formatACARSItem(const ACARSItem &acarsitem, const QString &msgf
         }
 
         if(acarsitem.moretocome)humantext+=" ...more to come... ";
+        humantext+="\n";
+        hasMessage=!acarsitem.message.isEmpty();
         return true;
     }
 
@@ -1503,6 +1505,8 @@ bool MainWindow::formatACARSItem(const ACARSItem &acarsitem, const QString &msgf
             }
             else humantext+="\n\n\t"+message+"\n";
         }
+        humantext+="\n";
+        hasMessage=!acarsitem.message.isEmpty();
         return true;
     }
 
@@ -1611,7 +1615,7 @@ bool MainWindow::formatACARSItem(const ACARSItem &acarsitem, const QString &msgf
             QJsonObject t;
             QDateTime ts=time.toUTC();
             t["sec"]=ts.toSecsSinceEpoch();
-            //t["usec"]=(ts.toMSecsSinceEpoch() % 1000) * 1000;
+            t["usec"]=(ts.toMSecsSinceEpoch() % 1000) * 1000;
             json["t"]=QJsonValue(t);
 
             json["isu"]=QJsonValue(isu);
@@ -1621,6 +1625,7 @@ bool MainWindow::formatACARSItem(const ACARSItem &acarsitem, const QString &msgf
 
         //convert json object to string
         humantext=QJsonDocument(json).toJson(QJsonDocument::Compact);
+        hasMessage=!message.isEmpty();
         return true;
     }
 
@@ -1648,348 +1653,95 @@ void MainWindow::ACARSslot(ACARSItem &acarsitem)
         if(linecnt>0)beep->play();//QApplication::beep();
     }
 
-    //TODO: get formatted message for display window
+    bool hasMessage=false;
 
-    //TODO: enumerate feeder_udp_socks to send
-
-    //this is how you can change the display format in the lowwer window
-    if(settingsdialog->msgdisplayformat=="1")
+    if(!formatACARSItem(acarsitem,settingsdialog->msgdisplayformat,humantext,hasMessage))
     {
-        ui->inputwidget->setLineWrapMode(QPlainTextEdit::NoWrap);
-        if(acarsitem.TAK==0x15)TAKstr=((QString)"<NAK>").toLatin1();
+        QString msg=QString(
+            "[ERROR] Invalid UDP feeder format settings: '%1' is not a valid message format. "
+            "Please go to Decoding tab in Settings and re-select an entry in the Output Format dropdown.\n"
+        ).arg(settingsdialog->msgdisplayformat);
+        ui->inputwidget->appendPlainText(msg);
 
-        if(acarsitem.nonacars)
-        {
-            if(acarsitem.message.isEmpty())humantext+=((QString)"").sprintf("ISU: AESID = %06X GESID = %02X QNO = %02X REFNO = %02X REG = %s",acarsitem.isuitem.AESID,acarsitem.isuitem.GESID,acarsitem.isuitem.QNO,acarsitem.isuitem.REFNO,acarsitem.PLANEREG.data());
-            else
-            {
-                QString message=acarsitem.message;
-                message.replace('\r','\n');
-                message.replace("\n\n","\n");
-                message.replace('\n',"●");
-                humantext+=(((QString)"").sprintf("ISU: AESID = %06X GESID = %02X QNO = %02X REFNO = %02X REG = %s TEXT = \"",acarsitem.isuitem.AESID,acarsitem.isuitem.GESID,acarsitem.isuitem.QNO,acarsitem.isuitem.REFNO,acarsitem.PLANEREG.data())+message+"\"");
-            }
-        }
-        else
-        {
-            if(acarsitem.message.isEmpty())humantext+=((QString)"").sprintf("ISU: AESID = %06X GESID = %02X QNO = %02X REFNO = %02X MODE = %c REG = %s TAK = %s LABEL = %02X%02X BI = %c",acarsitem.isuitem.AESID,acarsitem.isuitem.GESID,acarsitem.isuitem.QNO,acarsitem.isuitem.REFNO,acarsitem.MODE,acarsitem.PLANEREG.data(),TAKstr.data(),(uchar)acarsitem.LABEL[0],(uchar)acarsitem.LABEL[1],acarsitem.BI);
-            else
-            {
-                QString message=acarsitem.message;
-                message.replace('\r','\n');
-                message.replace("\n\n","\n");
-                message.replace('\n',"●");
-                humantext+=(((QString)"").sprintf("ISU: AESID = %06X GESID = %02X QNO = %02X REFNO = %02X MODE = %c REG = %s TAK = %s LABEL = %02X%02X BI = %c TEXT = \"",acarsitem.isuitem.AESID,acarsitem.isuitem.GESID,acarsitem.isuitem.QNO,acarsitem.isuitem.REFNO,acarsitem.MODE,acarsitem.PLANEREG.data(),TAKstr.data(),(uchar)acarsitem.LABEL[0],(uchar)acarsitem.LABEL[1],acarsitem.BI)+message+"\"");
-            }
-        }
-        if(acarsitem.moretocome)humantext+=" ...more to come... ";
-        humantext+="\t( ";
-        for(int k=0;k<(acarsitem.isuitem.userdata.size());k++)
-        {
-            uchar byte=((uchar)acarsitem.isuitem.userdata[k]);
-            //byte&=0x7F;
-            humantext+=((QString)"").sprintf("%02X ",byte);
-        }
-        humantext+=" )";
-        if((!settingsdialog->dropnontextmsgs)||(!acarsitem.message.isEmpty()))
-        {
-            ui->inputwidget->appendPlainText(humantext);
-            log(humantext);
-
-            QString expected;
-            formatACARSItem(acarsitem, "1", expected);
-            if (expected==humantext) {
-                qDebug() << "MATCH!!!!";
-            } else {
-                qDebug() << "######### FAIL #########";
-                qDebug() << "expected:  " << expected;
-                qDebug() << "humantext: " << humantext;
-                qDebug() << "\n";
-            }
-        }
+        return;
     }
 
-    if(settingsdialog->msgdisplayformat=="2")
+    if((settingsdialog->msgdisplayformat=="1")||(settingsdialog->msgdisplayformat=="2"))
     {
         ui->inputwidget->setLineWrapMode(QPlainTextEdit::NoWrap);
-        humantext+=QDateTime::currentDateTime().toUTC().toString("hh:mm:ss dd-MM-yy ")+"UTC ";
-        if(acarsitem.TAK==0x15)TAKstr=((QString)"!").toLatin1();
-        uchar label1=acarsitem.LABEL[1];
-        if((uchar)acarsitem.LABEL[1]==127)label1='d';
-
-        if(acarsitem.nonacars)
-        {
-            if(acarsitem.message.isEmpty())humantext+=((QString)"").sprintf("AES:%06X GES:%02X REG:%s",acarsitem.isuitem.AESID,acarsitem.isuitem.GESID,acarsitem.PLANEREG.data());
-            else
-            {
-                QString message=acarsitem.message;
-                message.replace('\r','\n');
-                message.replace("\n\n","\n");
-                message.replace('\n',"●");
-                humantext+=(((QString)"").sprintf("AES:%06X GES:%02X REG:%s ",acarsitem.isuitem.AESID,acarsitem.isuitem.GESID,acarsitem.PLANEREG.data()))+message;
-            }
-        }
-        else
-        {
-            if(acarsitem.message.isEmpty())humantext+=((QString)"").sprintf("AES:%06X GES:%02X %c %s %s %c%c %c",acarsitem.isuitem.AESID,acarsitem.isuitem.GESID,acarsitem.MODE,acarsitem.PLANEREG.data(),TAKstr.data(),(uchar)acarsitem.LABEL[0],label1,acarsitem.BI);
-            else
-            {
-                QString message=acarsitem.message;
-                message.replace('\r','\n');
-                message.replace("\n\n","\n");
-                message.replace('\n',"●");
-                humantext+=(((QString)"").sprintf("AES:%06X GES:%02X %c %s %s %c%c %c ",acarsitem.isuitem.AESID,acarsitem.isuitem.GESID,acarsitem.MODE,acarsitem.PLANEREG.data(),TAKstr.data(),(uchar)acarsitem.LABEL[0],label1,acarsitem.BI))+message;
-            }
-        }
-
-        if(acarsitem.moretocome)humantext+=" ...more to come... ";
-        if((!settingsdialog->dropnontextmsgs)||(!acarsitem.message.isEmpty()))
+        if((!settingsdialog->dropnontextmsgs)||hasMessage)
         {
             ui->inputwidget->appendPlainText(humantext);
             log(humantext);
-
-            QString expected;
-            formatACARSItem(acarsitem, "2", expected);
-            if (expected==humantext) {
-                qDebug() << "MATCH!!!!";
-            } else {
-                qDebug() << "######### FAIL #########";
-                qDebug() << "expected:  " << expected;
-                qDebug() << "humantext: " << humantext;
-                qDebug() << "\n";
-            }
         }
     }
 
     if(settingsdialog->msgdisplayformat=="3")
     {
         ui->inputwidget->setLineWrapMode(QPlainTextEdit::WidgetWidth);
-        QString message=acarsitem.message;
-        message.replace('\r','\n');
-        message.replace("\n\n","\n");
-        if(message.right(1)=="\n")message.chop(1);
-        if(message.left(1)=="\n")message.remove(0,1);
-        message.replace("\n","\n\t");
-
-        humantext+=QDateTime::currentDateTime().toUTC().toString("hh:mm:ss dd-MM-yy ")+"UTC ";
-        if(acarsitem.TAK==0x15)TAKstr=((QString)"!").toLatin1();
-        uchar label1=acarsitem.LABEL[1];
-        if((uchar)acarsitem.LABEL[1]==127)label1='d';
-
-        QByteArray PLANEREG;
-        PLANEREG=(((QString)".").repeated(7-acarsitem.PLANEREG.size())).toLatin1()+acarsitem.PLANEREG;
-        if(acarsitem.nonacars) humantext+=((QString)"").sprintf("AES:%06X GES:%02X   %s       ",acarsitem.isuitem.AESID,acarsitem.isuitem.GESID,PLANEREG.data());
-        else humantext+=((QString)"").sprintf("AES:%06X GES:%02X %c %s %s %c%c %c",acarsitem.isuitem.AESID,acarsitem.isuitem.GESID,acarsitem.MODE,PLANEREG.data(),TAKstr.data(),(uchar)acarsitem.LABEL[0],label1,acarsitem.BI);
-
-        //if(acarsitem.message.isEmpty())humantext+=((QString)"").sprintf("AES:%06X GES:%02X %c %s %s %c%c %c",acarsitem.isuitem.AESID,acarsitem.isuitem.GESID,acarsitem.MODE,acarsitem.PLANEREG.data(),TAKstr.data(),(uchar)acarsitem.LABEL[0],label1,acarsitem.BI)+"\n";
-        //else humantext+=(((QString)"").sprintf("AES:%06X GES:%02X %c %s %s %c%c %c",acarsitem.isuitem.AESID,acarsitem.isuitem.GESID,acarsitem.MODE,acarsitem.PLANEREG.data(),TAKstr.data(),(uchar)acarsitem.LABEL[0],label1,acarsitem.BI))+"\n\n\t"+message+"\n";
-
-        if(acarsitem.dblookupresult.size()==QMetaEnum::fromType<DataBaseTextUser::DataBaseSchema>().keyCount())
+        if((!settingsdialog->dropnontextmsgs)||(hasMessage&&(!acarsitem.nonacars)))
         {
-            QString manufacturer_and_type=acarsitem.dblookupresult[DataBaseTextUser::DataBaseSchema::Manufacturer]+" "+acarsitem.dblookupresult[DataBaseTextUser::DataBaseSchema::Type];
-            manufacturer_and_type=manufacturer_and_type.trimmed();
-            humantext+=" "+manufacturer_and_type+" "+acarsitem.dblookupresult[DataBaseTextUser::DataBaseSchema::RegisteredOwners];
-        }
-
-        if(!acarsitem.message.isEmpty())
-        {
-            if(!arincparser.downlinkheader.flightid.isEmpty())humantext+=" Flight "+arincparser.downlinkheader.flightid;
-            if(arincparser.arincmessage.info.size()>2)
-            {
-                QString info = arincparser.arincmessage.info;
-                info.replace("\n","\n\t");
-                humantext+="\n\n\t"+message+"\n\n\t"+info;
-            }
-            else humantext+="\n\n\t"+message+"\n";
-        }
-
-        if((!settingsdialog->dropnontextmsgs)||(!acarsitem.message.isEmpty()&&(!acarsitem.nonacars)))
-        {
-            QString expected;
-            formatACARSItem(acarsitem, "3", expected);
-            if (expected==humantext) {
-                qDebug() << "MATCH!!!!";
-            } else {
-                qDebug() << "######### FAIL #########";
-                qDebug() << "expected:  " << expected;
-                qDebug() << "humantext: " << humantext;
-                qDebug() << "\n";
-            }
-            /*
-             * TODO:
-            if(settingsdialog->udp_for_decoded_messages_enabled)//((settingsdialog->udp_for_decoded_messages_enabled)&&(arincparser.adownlinkbasicreportgroup.valid))
-            {
-                //send bottom text window to all udp sockects
-                for(int ii=0;ii<udpsockets_bottom_textedit.size();ii++)
-                {
-                    if(ii>=settingsdialog->udp_for_decoded_messages_address.size())continue;
-                    if(ii>=settingsdialog->udp_for_decoded_messages_port.size())continue;
-                    QUdpSocket *sock=udpsockets_bottom_textedit[ii].data();
-                    if((!sock->isOpen())||(!sock->isWritable()))
-                    {
-                        sock->close();
-                        sock->connectToHost(settingsdialog->udp_for_decoded_messages_address[ii], settingsdialog->udp_for_decoded_messages_port[ii]);
-                    }
-                    if((sock->isOpen())&&(sock->isWritable()))sock->write((humantext+"\n").toLatin1().data());
-                }
-            }
             ui->inputwidget->appendPlainText(humantext);
             log(humantext);
-            */
         }
     }
 
     if(settingsdialog->msgdisplayformat.startsWith("JSON"))
     {
         ui->inputwidget->setLineWrapMode(QPlainTextEdit::NoWrap);
-        QString message=acarsitem.message;
-        message.replace('\r','\n');
-        message.replace("\n\n","\n");
-        if(message.right(1)=="\n")message.chop(1);
-        if(message.left(1)=="\n")message.remove(0,1);
-        message.replace("\n","\n\t");
 
-
-        QDateTime time=QDateTime::currentDateTimeUtc();
-        if(acarsitem.TAK==0x15)TAKstr=((QString)"!").toLatin1();
-        uchar label1=acarsitem.LABEL[1];
-        if((uchar)acarsitem.LABEL[1]==127)label1='d';
-
-        //json object creation
-        QJsonObject json;
-
-        if(settingsdialog->msgdisplayformat=="JSON")
+        if((!settingsdialog->dropnontextmsgs)||(hasMessage&&(!acarsitem.nonacars)))
         {
-            //add database lookup info if available
-            if(acarsitem.dblookupresult.size()==QMetaEnum::fromType<DataBaseTextUser::DataBaseSchema>().keyCount())
-            {
-                json["DB_MANUFACTURER"]=acarsitem.dblookupresult[DataBaseTextUser::DataBaseSchema::Manufacturer].trimmed();
-                json["DB_TYPE"]=acarsitem.dblookupresult[DataBaseTextUser::DataBaseSchema::Type].trimmed();
-                json["DB_OWNERS"]=acarsitem.dblookupresult[DataBaseTextUser::DataBaseSchema::RegisteredOwners].trimmed();
-            }
-            //add common things
-            json["TIME"]=time.toSecsSinceEpoch();
-            json["TIME_UTC"]=time.toUTC().toString("yyyy-MM-dd hh:mm:ss");
-            json["NAME"]=QApplication::applicationDisplayName();
-            json["NONACARS"]=acarsitem.nonacars;
-            json["AESID"]=((QString)"").sprintf("%06X",acarsitem.isuitem.AESID);
-            json["GESID"]=((QString)"").sprintf("%02X",acarsitem.isuitem.GESID);
-            json["QNO"]=((QString)"").sprintf("%02X",acarsitem.isuitem.QNO);
-            json["REFNO"]=((QString)"").sprintf("%02X",acarsitem.isuitem.REFNO);
-            json["REG"]=(QString)acarsitem.PLANEREG;
-            //add acars message things
-            if(!acarsitem.nonacars)
-            {
-                json["MODE"]=(QString)acarsitem.MODE;
-                json["TAK"]=(QString)TAKstr;
-                json["LABEL"]=(((QString)"").sprintf("%c%c",(uchar)acarsitem.LABEL[0],label1));
-                json["BI"]=(QString)acarsitem.BI;
-            }
-            //if there is a message then add it and any parsing using arincparser
-            if(!message.isEmpty())
-            {
-                json["MESSAGE"]=message;
-                if(!arincparser.downlinkheader.flightid.isEmpty())json["FLIGHT"]=arincparser.downlinkheader.flightid;
-                if(arincparser.arincmessage.info.size()>2)json["ARINCPARSER_MESSAGE_INFO"]=arincparser.arincmessage.info;
-            }
-        } 
-        else if(settingsdialog->msgdisplayformat=="JSONdump")
-        {
-            QJsonObject app;
-            app["name"]="JAERO";
-            app["ver"]=QApplication::applicationDisplayName();
-            json["app"]=QJsonValue(app);
-
-            QJsonObject isu;
-
-            QJsonObject aes;
-            aes["type"]="Aircraft Earth Station";
-            aes["addr"]=((QString)"").sprintf("%06X",acarsitem.isuitem.AESID);
-
-            QJsonObject ges;
-            ges["type"]="Ground Earth Station";
-            ges["addr"]=((QString)"").sprintf("%02X",acarsitem.isuitem.GESID);
-
-            if(!acarsitem.nonacars) 
-            {
-                QJsonObject acars;
-                acars["mode"]=(QString)acarsitem.MODE;
-                acars["ack"]=(QString)TAKstr;
-                acars["blk_id"]=(QString)acarsitem.BI;
-                acars["label"]=(((QString)"").sprintf("%c%c",(uchar)acarsitem.LABEL[0],label1));
-                acars["reg"]=(QString)acarsitem.PLANEREG;
-
-                if(!arincparser.downlinkheader.flightid.isEmpty())acars["flight"]=arincparser.downlinkheader.flightid;
-
-                if(!message.isEmpty())
-                {
-                    acars["msg_text"]=message;
-
-                    if (arincparser.arincmessage.info_json.size()>0)
-                    {
-                        for(auto it=arincparser.arincmessage.info_json.constBegin();it!=arincparser.arincmessage.info_json.constEnd();it++)
-                        {
-                            acars.insert(it.key(),it.value());
-                        }
-                    }
-                }
-
-                isu["acars"]=QJsonValue(acars);
-            }
-
-            isu["refno"]=((QString)"").sprintf("%02X",acarsitem.isuitem.REFNO);
-            isu["qno"]=((QString)"").sprintf("%02X",acarsitem.isuitem.QNO);
-            isu["src"]=QJsonValue(acarsitem.downlink?aes:ges);
-            isu["dst"]=QJsonValue(acarsitem.downlink?ges:aes);
-
-            QJsonObject t;
-            QDateTime ts=time.toUTC();
-            t["sec"]=ts.toSecsSinceEpoch();
-            //t["usec"]=(ts.toMSecsSinceEpoch() % 1000) * 1000;
-            json["t"]=QJsonValue(t);
-
-            json["isu"]=QJsonValue(isu);
-
-            if(settingsdialog->set_station_id_enabled&&settingsdialog->station_id.size()>0)json["station"]=settingsdialog->station_id;
-        }
-
-        //convert json object to string
-        humantext=QJsonDocument(json).toJson(QJsonDocument::Compact);
-
-        //output result to udp and screen
-        if((!settingsdialog->dropnontextmsgs)||(!message.isEmpty()&&(!acarsitem.nonacars)))
-        {
-            QString expected;
-            formatACARSItem(acarsitem, settingsdialog->msgdisplayformat, expected);
-            if (expected==humantext) {
-                qDebug() << "MATCH!!!!";
-            } else {
-                qDebug() << "######### FAIL #########";
-                qDebug() << "expected:  " << expected;
-                qDebug() << "humantext: " << humantext;
-                qDebug() << "\n";
-            }
-            /*
-             * TODO:
-            if(settingsdialog->udp_for_decoded_messages_enabled)
-            {
-                //send bottom text window to all udp sockects
-                for(int ii=0;ii<udpsockets_bottom_textedit.size();ii++)
-                {
-                    if(ii>=settingsdialog->udp_for_decoded_messages_address.size())continue;
-                    if(ii>=settingsdialog->udp_for_decoded_messages_port.size())continue;
-                    QUdpSocket *sock=udpsockets_bottom_textedit[ii].data();
-                    if((!sock->isOpen())||(!sock->isWritable()))
-                    {
-                        sock->close();
-                        sock->connectToHost(settingsdialog->udp_for_decoded_messages_address[ii], settingsdialog->udp_for_decoded_messages_port[ii]);
-                    }
-                    if((sock->isOpen())&&(sock->isWritable()))sock->write((humantext).toLatin1().data());
-                }
-            }
             ui->inputwidget->appendPlainText(humantext);
             log(humantext);
-            */
+        }
+    }
+
+    if(settingsdialog->udp_for_decoded_messages_enabled)
+    {
+        if((feeder_formats.size()!=feeder_udp_socks.size())||(feeder_udp_socks.size()!=settingsdialog->udp_feeders.size()))
+        {
+            QString msg="[ERROR] UDP feeder entries mismatch: entry count mismatch. Please delete "
+                        "and re-enter all the entries in the Feeder tab in Settings if possible.\n";
+            ui->inputwidget->appendPlainText(msg);
+
+            return;
+        }
+
+        for (int i=0;i<feeder_udp_socks.size();i++)
+        {
+            QString msgfmt=feeder_formats[i];
+            QString msgtext;
+
+            bool hasMessage=false;
+            bool sendPkt=false;
+
+            if (!formatACARSItem(acarsitem,msgfmt,msgtext,hasMessage))
+            {
+                QString msg=QString(
+                    "[ERROR] Invalid UDP feeder format settings: '%1' is not a valid message format. "
+                    "Please delete this entry in the Feeder tab in Settings and add a new entry with a valid display format.\n"
+                ).arg(msgfmt);
+                ui->inputwidget->appendPlainText(msg);
+
+                continue;
+            }
+
+            if (((msgfmt=="1")||(msgfmt=="2"))&&((!settingsdialog->dropnontextmsgs)||hasMessage)) sendPkt=true;
+            if (((msgfmt=="3")||msgfmt.startsWith("JSON"))&&((!settingsdialog->dropnontextmsgs)||(hasMessage&&(!acarsitem.nonacars)))) sendPkt=true;
+
+            if (sendPkt)
+            {
+                QUdpSocket *sock=feeder_udp_socks[i].data();
+                if((!sock->isOpen())||(!sock->isWritable()))
+                {
+                    sock->close();
+
+                    QJsonObject info=settingsdialog->udp_feeders[i].toObject();
+                    sock->connectToHost(info["host"].toString(), info["port"].toInt());
+                }
+                if((sock->isOpen())&&(sock->isWritable()))sock->write((msgtext).toLatin1().data());
+            }
         }
     }
 }
@@ -2057,11 +1809,8 @@ void MainWindow::on_actionReduce_CPU_triggered(bool checked)
 //periodic info to be sent via UDP if JSON format used
 void MainWindow::statusToUDPifJSONset()
 {
-    /*
-     * TODO:
-    if((settingsdialog->udp_for_decoded_messages_enabled)&&(settingsdialog->msgdisplayformat=="JSON"))
+    if(settingsdialog->udp_for_decoded_messages_enabled)
     {
-
         //json object creation
         QJsonObject json;
         json["DCD"]=last_dcd;
@@ -2073,20 +1822,28 @@ void MainWindow::statusToUDPifJSONset()
         //convert json object to string
         QString humantext=QJsonDocument(json).toJson(QJsonDocument::Compact);
 
-        //send to all udp sockects
-        for(int ii=0;ii<udpsockets_bottom_textedit.size();ii++)
+        if((feeder_formats.size()!=feeder_udp_socks.size())||(feeder_formats.size()!=settingsdialog->udp_feeders.size()))
         {
-            if(ii>=settingsdialog->udp_for_decoded_messages_address.size())continue;
-            if(ii>=settingsdialog->udp_for_decoded_messages_port.size())continue;
-            QUdpSocket *sock=udpsockets_bottom_textedit[ii].data();
-            if((!sock->isOpen())||(!sock->isWritable()))
-            {
-                sock->close();
-                sock->connectToHost(settingsdialog->udp_for_decoded_messages_address[ii], settingsdialog->udp_for_decoded_messages_port[ii]);
-            }
-            if((sock->isOpen())&&(sock->isWritable()))sock->write((humantext).toLatin1().data());
+            QString msg="[ERROR] UDP feeder entries mismatch: entry count mismatch. Please delete "
+                        "and re-enter all the entries in the Feeder tab in Settings if possible.\n";
+            ui->inputwidget->appendPlainText(msg);
+            return;
         }
 
+        for(int i=0;i<feeder_udp_socks.size();i++)
+        {
+            if(feeder_formats[i]=="JSON")
+            {
+                QUdpSocket *sock=feeder_udp_socks[i].data();
+                if((!sock->isOpen())||(!sock->isWritable()))
+                {
+                    sock->close();
+
+                    QJsonObject info=settingsdialog->udp_feeders[i].toObject();
+                    sock->connectToHost(info["host"].toString(), info["port"].toInt());
+                }
+                if((sock->isOpen())&&(sock->isWritable()))sock->write((humantext).toLatin1().data());
+            }
+        }
     }
-    */
 }
