@@ -1255,6 +1255,12 @@ void MainWindow::acceptsettings()
    }
 }
 
+template <typename T>
+QString upperHex(T a, int fieldWidth, int base, QChar fillChar)
+{
+    return QString("%1").arg(a, fieldWidth, base, fillChar).toUpper();
+}
+
 void MainWindow::on_action_PlaneLog_triggered()
 {
     planelog->show();
@@ -1262,7 +1268,9 @@ void MainWindow::on_action_PlaneLog_triggered()
 
 void MainWindow::CChannelAssignmentSlot(CChannelAssignmentItem &item)
 {
-    QString message=QDateTime::currentDateTime().toUTC().toString("hh:mm:ss dd-MM-yy ")+((QString)"").sprintf("UTC AES:%06X GES:%02X ",item.AESID,item.GESID);
+    QString message=QDateTime::currentDateTime().toUTC().toString("hh:mm:ss dd-MM-yy ")+QString("UTC AES:%1 GES:%2 ")
+                                                                                            .arg(upperHex(item.AESID, 6, 16, QChar('0')))
+                                                                                            .arg(upperHex(item.GESID, 2, 16, QChar('0')));
     QString rx_beam = " Global Beam ";
     if(item.receive_spotbeam)rx_beam=" Spot Beam ";
     message += "Receive Freq: " + QString::number(item.receive_freq) + rx_beam + "Transmit " + QString::number(item.transmit_freq);
@@ -1286,12 +1294,6 @@ void MainWindow::CChannelAssignmentSlot(CChannelAssignmentItem &item)
     }
 
     ui->plainTextEdit_cchan_assignment->appendPlainText(message);
-}
-
-template <typename T>
-QString upperHex(T a, int fieldWidth, int base, QChar fillChar)
-{
-    return QString("%1").arg(a, fieldWidth, base, fillChar).toUpper();
 }
 
 bool MainWindow::formatACARSItem(const ACARSItem &acarsitem, const QString &msgfmt, QString &humantext, bool &hasMessage)
@@ -1375,7 +1377,7 @@ bool MainWindow::formatACARSItem(const ACARSItem &acarsitem, const QString &msgf
             //byte&=0x7F;
             humantext+=QString("%1 ").arg(byte, 2, 16, QChar('0')).toUpper();
         }
-        humantext+=" )\n";
+        humantext+=" )";
         hasMessage=!acarsitem.message.isEmpty();
         return true;
     }
@@ -1443,7 +1445,6 @@ bool MainWindow::formatACARSItem(const ACARSItem &acarsitem, const QString &msgf
         }
 
         if(acarsitem.moretocome)humantext+=" ...more to come... ";
-        humantext+="\n";
         hasMessage=!acarsitem.message.isEmpty();
         return true;
     }
@@ -1505,7 +1506,6 @@ bool MainWindow::formatACARSItem(const ACARSItem &acarsitem, const QString &msgf
             }
             else humantext+="\n\n\t"+message+"\n";
         }
-        humantext+="\n";
         hasMessage=!acarsitem.message.isEmpty();
         return true;
     }
@@ -1659,7 +1659,7 @@ void MainWindow::ACARSslot(ACARSItem &acarsitem)
     {
         QString msg=QString(
             "[ERROR] Invalid UDP feeder format settings: '%1' is not a valid message format. "
-            "Please go to Decoding tab in Settings and re-select an entry in the Output Format dropdown.\n"
+            "Please go to Decoding tab in Settings and re-select an entry in the Output Format dropdown."
         ).arg(settingsdialog->msgdisplayformat);
         ui->inputwidget->appendPlainText(msg);
 
@@ -1702,7 +1702,7 @@ void MainWindow::ACARSslot(ACARSItem &acarsitem)
         if((feeder_formats.size()!=feeder_udp_socks.size())||(feeder_udp_socks.size()!=settingsdialog->udp_feeders.size()))
         {
             QString msg="[ERROR] UDP feeder entries mismatch: entry count mismatch. Please delete "
-                        "and re-enter all the entries in the Feeder tab in Settings if possible.\n";
+                        "and re-enter all the entries in the Feeder tab in Settings if possible.";
             ui->inputwidget->appendPlainText(msg);
 
             return;
@@ -1720,13 +1720,14 @@ void MainWindow::ACARSslot(ACARSItem &acarsitem)
             {
                 QString msg=QString(
                     "[ERROR] Invalid UDP feeder format settings: '%1' is not a valid message format. "
-                    "Please delete this entry in the Feeder tab in Settings and add a new entry with a valid display format.\n"
+                    "Please delete this entry in the Feeder tab in Settings and add a new entry with a valid display format."
                 ).arg(msgfmt);
                 ui->inputwidget->appendPlainText(msg);
 
                 continue;
             }
 
+            if ((msgfmt=="1")||(msgfmt=="2")||(msgfmt=="3")) msgtext+="\n";
             if (((msgfmt=="1")||(msgfmt=="2"))&&((!settingsdialog->dropnontextmsgs)||hasMessage)) sendPkt=true;
             if (((msgfmt=="3")||msgfmt.startsWith("JSON"))&&((!settingsdialog->dropnontextmsgs)||(hasMessage&&(!acarsitem.nonacars)))) sendPkt=true;
 
@@ -1825,7 +1826,7 @@ void MainWindow::statusToUDPifJSONset()
         if((feeder_formats.size()!=feeder_udp_socks.size())||(feeder_formats.size()!=settingsdialog->udp_feeders.size()))
         {
             QString msg="[ERROR] UDP feeder entries mismatch: entry count mismatch. Please delete "
-                        "and re-enter all the entries in the Feeder tab in Settings if possible.\n";
+                        "and re-enter all the entries in the Feeder tab in Settings if possible.";
             ui->inputwidget->appendPlainText(msg);
             return;
         }
