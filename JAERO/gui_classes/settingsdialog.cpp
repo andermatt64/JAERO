@@ -197,6 +197,8 @@ void SettingsDialog::populatesettings()
     }
     else
     {
+        settings.endArray();
+
         QStringList hosts=settings.value("lineEditudpoutputdecodedmessagesaddress","").toString().simplified().split(" ");
         for (int i=0;i<hosts.size();i++)
         {
@@ -298,6 +300,9 @@ void SettingsDialog::accept()
     settings.setValue("lineEditplanelookup", ui->lineEditplanelookup->text());
     settings.setValue("checkBoxonlyuselibacars", ui->checkBoxonlyuselibacars->isChecked());
     settings.setValue("checkBoxbeepontextmessage", ui->checkBoxbeepontextmessage->isChecked());
+
+    //remove deprecated setting
+    settings.remove("lineEditudpoutputdecodedmessagesaddress");
 
     settings.beginWriteArray("feeders");
     settings.remove("");
