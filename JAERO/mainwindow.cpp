@@ -28,21 +28,10 @@ QString upperHex(T a, int fieldWidth, int base, QChar fillChar)
     return QString("%1").arg(a, fieldWidth, base, fillChar).toUpper();
 }
 
+//helper function for connecting UDP sockets, abstracted for potential usefulness in the future
 void udpSocketConnect(QUdpSocket &sock, const QString &host, quint16 port)
 {
-    QHostAddress addr(host);
-    if(addr.isNull())
-    {
-        qDebug() << "udpSocketConnect: " << host << " is not a valid address";
-
-        QList<QHostAddress> results=QHostInfo::fromName(host).addresses();
-        if(results.count()>0) addr=results[0];
-        qDebug() << "udpSocketConnect: addresses for " << host << " => " << results.count() << " count";
-    }
-
-    qDebug() << "udpSocketConnect: addr is valid = " << !addr.isNull();
-
-    if(!addr.isNull()) sock.connectToHost(addr, port);
+    sock.connectToHost(host, port);
 }
 
 void MainWindow::setLedState(QLed *led, LedState state)
@@ -1237,7 +1226,7 @@ void MainWindow::acceptsettings()
     //connect ports
     if(settingsdialog->udp_for_decoded_messages_enabled)
     {
-        for (int i=0;i<settingsdialog->udp_feeders.count();i++)
+        for (int i=0;i<feeder_udp_socks.size();i++)
         {
             QJsonObject info = settingsdialog->udp_feeders[i].toObject();
             udpSocketConnect(*feeder_udp_socks[i].data(), info["host"].toString(), info["port"].toInt());
