@@ -85,7 +85,7 @@ void SettingsDialog::populatepublicvars()
 
         obj.insert("format", outputformats[idx]);
         obj.insert("host", ui->outputListTable->item(i,1)->text());
-        obj.insert("post", ui->outputListTable->item(i,2)->text());
+        obj.insert("port", ui->outputListTable->item(i,2)->text().toInt());
 
         udp_feeders.push_back(QJsonValue(obj));
     }
