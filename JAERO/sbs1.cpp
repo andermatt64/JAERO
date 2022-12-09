@@ -16,7 +16,7 @@ void SBS1::starttcpconnections(const QList<QHostAddress> &addresses, const QList
     if(!running)lastbehaveasclient=!behaveasclient;
     if(lastbehaveasclient!=behaveasclient)
     {
-        stoptcpconnection();
+        stoptcpconnections();
     }
     if(behaveasclient)
     {
