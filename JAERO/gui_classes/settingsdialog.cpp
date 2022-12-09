@@ -92,7 +92,6 @@ void SettingsDialog::populatepublicvars()
 
     udp_for_decoded_messages_enabled=ui->checkBoxenablefeeding->isChecked();
 
-    //TODO[XXX]
     //ads message output using SBS1 protocol over TCP
     QStringList addrs=ui->lineEdittcpoutputadsmessagesaddress->text().split(' ', Qt::SkipEmptyParts);
     QStringList sanitized_addrs;
@@ -100,11 +99,11 @@ void SettingsDialog::populatepublicvars()
     tcp_for_ads_messages_addresses.clear();
     tcp_for_ads_messages_ports.clear();
 
-    qDebug() << "ADS feeders\n";
     for(int i=0;i<addrs.size();i++)
     {
         QHostAddress ads_tcp_addr;
         QString hostaddr=addrs[i].section(':',0,0);
+
         if(!ads_tcp_addr.setAddress(hostaddr))
         {
             QHostInfo info = QHostInfo::fromName(hostaddr);
@@ -116,9 +115,14 @@ void SettingsDialog::populatepublicvars()
             quint16 ads_tcp_port=addrs[i].section(':',1,1).toInt();
             if(ads_tcp_port==0) ads_tcp_port=30003;
 
-            tcp_for_ads_messages_addresses.push_back(ads_tcp_addr);
-            tcp_for_ads_messages_ports.push_back(ads_tcp_port);
-            sanitized_addrs.push_back(hostaddr + ":" + QString::number(ads_tcp_port));
+            QString clean_addr=hostaddr + ":" + QString::number(ads_tcp_port);
+            if(!sanitized_addrs.contains(clean_addr, Qt::CaseInsensitive))
+            {
+                tcp_for_ads_messages_addresses.push_back(ads_tcp_addr);
+                tcp_for_ads_messages_ports.push_back(ads_tcp_port);
+
+                sanitized_addrs.push_back(clean_addr);
+            }
         }
     }
     QString clean_addrs=sanitized_addrs.join(" ");
