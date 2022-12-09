@@ -11,8 +11,8 @@ class SBS1 : public QObject
     Q_OBJECT
 public:
     explicit SBS1(QObject *parent = 0);
-    void starttcpconnection(const QHostAddress &address, quint16 port, bool behaveasclient);
-    void stoptcpconnection();
+    void starttcpconnections(const QList<QHostAddress> &addresses, const QList<quint16> &ports, bool behaveasclient);
+    void stoptcpconnections();
 signals:
     void SendBAViaTCP(QByteArray &ba);
 public slots:
@@ -21,7 +21,7 @@ public slots:
     void DownlinkGroupsSlot(DownlinkGroups &groups);
 private:
     Tcpserver *tcpserver;
-    Tcpclient *tcpclient;
+    QList<QPointer<Tcpclient>> tcpclients;
     bool running;
 };
 

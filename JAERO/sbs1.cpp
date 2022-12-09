@@ -5,12 +5,13 @@ SBS1::SBS1(QObject *parent)
         : QObject(parent)
 {
     tcpserver=new Tcpserver(this);
-    tcpclient=new Tcpclient(this);
     running=false;
 }
 
-void SBS1::starttcpconnection(const QHostAddress &address, quint16 port, bool behaveasclient)
+void SBS1::starttcpconnections(const QList<QHostAddress> &addresses, const QList<quint16> &ports, bool behaveasclient)
 {
+    // size of addresses and ports being equal should be enforced in settings
+
     static bool lastbehaveasclient=!behaveasclient;
     if(!running)lastbehaveasclient=!behaveasclient;
     if(lastbehaveasclient!=behaveasclient)
@@ -19,12 +20,26 @@ void SBS1::starttcpconnection(const QHostAddress &address, quint16 port, bool be
     }
     if(behaveasclient)
     {
-        if(lastbehaveasclient!=behaveasclient)
+
+        int number_of_ports_wanted=addresses.size();
+        while(tcpclients.size()<number_of_ports_wanted)
         {
-            disconnect(this, SIGNAL(SendBAViaTCP(QByteArray&)), 0, 0);
-            connect(this,SIGNAL(SendBAViaTCP(QByteArray&)),tcpclient,SLOT(SendBAToTCPServer(QByteArray&)));
+            tcpclients.push_back(new Tcpclient(this));
         }
-        tcpclient->startclient(address,port);
+
+        disconnect(this, SIGNAL(SendBAViaTCP(QByteArray&)), 0, 0);
+
+        for (int i=number_of_ports_wanted;i<tcpclients.size();)
+        {
+            tcpclients[i].data()->deleteLater();
+            tcpclients.removeAt(i);
+        }
+
+        for (int i=0;i<tcpclients.size();i++)
+        {
+            connect(this,SIGNAL(SendBAViaTCP(QByteArray&)),tcpclients[i].data(),SLOT(SendBAToTCPServer(QByteArray&)));
+            tcpclients[i]->startclient(addresses[i], ports[i]);
+        }
     }
     else
     {
@@ -33,17 +48,21 @@ void SBS1::starttcpconnection(const QHostAddress &address, quint16 port, bool be
             disconnect(this, SIGNAL(SendBAViaTCP(QByteArray&)), 0, 0);
             connect(this,SIGNAL(SendBAViaTCP(QByteArray&)),tcpserver,SLOT(SendBAToAllTCPClients(QByteArray&)));
         }
-        tcpserver->startserver(address,port);
+        tcpserver->startserver(addresses.first(),ports.first());
     }
     lastbehaveasclient=behaveasclient;
     running=true;
 }
 
-void SBS1::stoptcpconnection()
+void SBS1::stoptcpconnections()
 {
     disconnect(this, SIGNAL(SendBAViaTCP(QByteArray&)), 0, 0);
     tcpserver->stopserver();
-    tcpclient->stopclient();
+
+    for (int i=0;i<tcpclients.count();i++)
+    {
+        tcpclients[i]->stopclient();
+    }
     running=false;
 }
 
