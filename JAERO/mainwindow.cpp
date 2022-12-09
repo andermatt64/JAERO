@@ -31,7 +31,8 @@ QString upperHex(T a, int fieldWidth, int base, QChar fillChar)
 //helper function for connecting UDP sockets, abstracted for potential usefulness in the future
 void udpSocketConnect(QUdpSocket &sock, const QString &host, quint16 port)
 {
-    sock.connectToHost(host, port);
+    // fix localhost hostname resolving issue
+    sock.connectToHost((host.trimmed().toLower()=="localhost")?"127.0.0.1":host, port);
 }
 
 void MainWindow::setLedState(QLed *led, LedState state)
@@ -1110,8 +1111,8 @@ void MainWindow::acceptsettings()
     }
 
     //start or stop tcp server/client
-    if(settingsdialog->tcp_for_ads_messages_enabled)sbs1->starttcpconnection(settingsdialog->tcp_for_ads_messages_address,settingsdialog->tcp_for_ads_messages_port,settingsdialog->tcp_as_client_enabled);
-    else sbs1->stoptcpconnection();
+    if(settingsdialog->tcp_for_ads_messages_enabled)sbs1->starttcpconnections(settingsdialog->tcp_for_ads_messages_addresses,settingsdialog->tcp_for_ads_messages_ports,settingsdialog->tcp_as_client_enabled);
+    else sbs1->stoptcpconnections();
 
     //if soundcard rate changed
     if(typeofdemodtouse==MSK)
