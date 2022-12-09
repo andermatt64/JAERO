@@ -50,9 +50,8 @@ public:
     QJsonArray udp_feeders;
     bool udp_for_decoded_messages_enabled;
 
-
-    QHostAddress tcp_for_ads_messages_address;
-    quint16 tcp_for_ads_messages_port;
+    QList<QHostAddress> tcp_for_ads_messages_addresses;
+    QList<quint16> tcp_for_ads_messages_ports;
     bool tcp_for_ads_messages_enabled;
     bool tcp_as_client_enabled;
 
