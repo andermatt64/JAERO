@@ -104,7 +104,7 @@ void SettingsDialog::populatepublicvars()
         QHostAddress ads_tcp_addr;
         QString hostaddr=addrs[i].section(':',0,0);
 
-        if(!ads_tcp_addr.setAddress(hostaddr))
+        if(!ads_tcp_addr.setAddress((hostaddr.trimmed().toLower()=="localhost")?"127.0.0.1":hostaddr))
         {
             QHostInfo info = QHostInfo::fromName(hostaddr);
             if (!info.addresses().empty()) ads_tcp_addr=info.addresses().first();
