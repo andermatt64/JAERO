@@ -92,26 +92,41 @@ void SettingsDialog::populatepublicvars()
 
     udp_for_decoded_messages_enabled=ui->checkBoxenablefeeding->isChecked();
 
+    //TODO[XXX]
     //ads message output using SBS1 protocol over TCP
-    QString hostaddr=ui->lineEdittcpoutputadsmessagesaddress->text().section(':',0,0);
-    if(!tcp_for_ads_messages_address.setAddress(hostaddr))
+    QStringList addrs=ui->lineEdittcpoutputadsmessagesaddress->text().split(' ', Qt::SkipEmptyParts);
+    QStringList sanitized_addrs;
+
+    tcp_for_ads_messages_addresses.clear();
+    tcp_for_ads_messages_ports.clear();
+
+    qDebug() << "ADS feeders\n";
+    for(int i=0;i<addrs.size();i++)
     {
-        QString tstr=ui->lineEdittcpoutputadsmessagesaddress->text().section(':',1,1);
-        ui->lineEdittcpoutputadsmessagesaddress->setText("0.0.0.0:"+tstr);
-        tcp_for_ads_messages_address.clear();
-        QSettings settings("Jontisoft", settings_name);
-        settings.setValue("lineEdittcpoutputadsmessagesaddress", "0.0.0.0:"+tstr);
-        qDebug()<<"Can't set TCP address reverting to 0.0.0.0";
+        QHostAddress ads_tcp_addr;
+        QString hostaddr=addrs[i].section(':',0,0);
+        if(!ads_tcp_addr.setAddress(hostaddr))
+        {
+            QHostInfo info = QHostInfo::fromName(hostaddr);
+            if (!info.addresses().empty()) ads_tcp_addr=info.addresses().first();
+        }
+
+        if(!ads_tcp_addr.isNull())
+        {
+            quint16 ads_tcp_port=addrs[i].section(':',1,1).toInt();
+            if(ads_tcp_port==0) ads_tcp_port=30003;
+
+            tcp_for_ads_messages_addresses.push_back(ads_tcp_addr);
+            tcp_for_ads_messages_ports.push_back(ads_tcp_port);
+            sanitized_addrs.push_back(hostaddr + ":" + QString::number(ads_tcp_port));
+        }
     }
-    tcp_for_ads_messages_port=ui->lineEdittcpoutputadsmessagesaddress->text().section(':',1,1).toInt();
-    if(tcp_for_ads_messages_port==0)
-    {
-        qDebug()<<"Can't set TCP port reverting to 30003";
-        ui->lineEdittcpoutputadsmessagesaddress->setText(hostaddr+":30003");
-        QSettings settings("Jontisoft", settings_name);
-        settings.setValue("lineEdittcpoutputadsmessagesaddress", hostaddr+":30003");
-        tcp_for_ads_messages_port=30003;
-    }
+    QString clean_addrs=sanitized_addrs.join(" ");
+    QSettings settings("Jontisoft", settings_name);
+    settings.setValue("lineEdittcpoutputadsmessagesaddress", clean_addrs);
+    ui->lineEdittcpoutputadsmessagesaddress->setText(clean_addrs);
+
+
     tcp_for_ads_messages_enabled=ui->checkOutputADSMessageToTCP->isChecked();
     tcp_as_client_enabled=ui->checkTCPAsClient->isChecked();
     ui->checkTCPAsClient->setEnabled(ui->checkOutputADSMessageToTCP->isChecked());
