@@ -1602,7 +1602,14 @@ bool MainWindow::formatACARSItem(const ACARSItem &acarsitem, const QString &msgf
 
                 if(!message.isEmpty())
                 {
-                    acars["msg_text"]=message;
+                    if (acarsitem.downlink) {
+                        acars["msg_num"]=message.mid(0,3);
+                        acars["msg_num_seq"]=message.mid(3,1);
+                        acars["flight"]=message.mid(4,6);
+                        acars["msg_text"]=message.mid(4+6);
+                    } else {
+                        acars["msg_text"]=message;
+                    }
 
                     if (arincparser.arincmessage.info_json.size()>0)
                     {
