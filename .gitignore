@@ -59,6 +59,9 @@ Thumbs.db
 *.vcxproj
 *vcxproj.*
 
+# QtCreator generated files
+JAERO/.qtc_clangd/
+
 # MinGW generated files
 *.Debug
 *.Release
